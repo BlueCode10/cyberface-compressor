@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cyberface Compressor</title>
+<link rel="icon" href="/favicon.ico">
+<style>
+:root { --bg: #07090d; --panel: #0d1016; --card: #11151d; --line: #202631; --muted: #7b8493; --text: #f4f6f8;
+  --accent: #ff4e27; --ok: #8fe0b5; --warn: #ffcf8a; }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--text); font: 13px Inter, "Segoe UI", Arial, sans-serif; display: grid;
+  grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); overflow: hidden; }
+button, select { font: inherit; color: inherit; cursor: pointer; }
+button:disabled, select:disabled { opacity: .45; cursor: default; }
+header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.mark { width: 34px; height: 34px; transform: skew(-7deg); border-radius: 7px; background: linear-gradient(145deg, var(--accent), #b91d18);
+  display: grid; place-items: center; font-weight: 950; font-style: italic; font-size: 15px; letter-spacing: -1px; flex: none; }
+.brand { flex: 1; min-width: 0; }
+.brand strong { display: block; font-weight: 850; letter-spacing: 1px; font-size: 12px; white-space: nowrap; }
+.brand small { color: var(--muted); font-size: 9px; letter-spacing: 2px; white-space: nowrap; }
+.btn { border: 1px solid var(--line); background: #141922; padding: 8px 14px; border-radius: 8px; font-weight: 650; white-space: nowrap; }
+.btn:not(:disabled):hover { border-color: #3a4352; }
+.btn.primary { background: linear-gradient(135deg, var(--accent), #ff7a1a); border-color: transparent; color: #fff; }
+.ver { color: var(--muted); font-size: 10px; border: 1px solid var(--line); border-radius: 5px; padding: 2px 6px; }
+main { position: relative; overflow: auto; padding: 16px; }
+.wrap { max-width: 720px; margin: 0 auto; display: grid; gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+.empty { text-align: center; color: var(--muted); padding: 56px 16px; border: 2px dashed var(--line); border-radius: 14px; }
+.empty strong { display: block; color: var(--text); font-size: 16px; margin-bottom: 6px; }
+.fname { font-weight: 750; font-size: 15px; word-break: break-all; }
+.fpath { color: var(--muted); font-size: 11px; word-break: break-all; margin-top: 3px; }
+.meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.pill { border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; font-size: 11px; color: var(--muted); }
+.pill b { color: var(--text); font-weight: 650; }
+.pill.lock { border-color: #5a4320; color: var(--warn); }
+.note { margin-top: 10px; color: var(--warn); font-size: 12px; }
+h2 { margin: 0 0 4px; font-size: 12px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); font-weight: 750; }
+.hint { color: var(--muted); font-size: 12px; margin: 0 0 10px; }
+table { width: 100%; border-collapse: collapse; }
+td { padding: 7px 0; border-top: 1px solid var(--line); vertical-align: middle; }
+td.n { font-weight: 650; }
+td.f { color: var(--muted); font-size: 11px; width: 60px; }
+td.s { text-align: right; width: 150px; }
+select { background: #141922; border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; width: 140px; }
+select.changed { border-color: var(--accent); }
+.texhead { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+.texhead h2 { flex: 1; margin: 0; }
+.btn.sm { padding: 5px 10px; font-size: 12px; }
+.actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.actions .mode { color: var(--muted); font-size: 12px; flex: 1; min-width: 200px; }
+.result { display: grid; gap: 6px; }
+.big { font-size: 22px; font-weight: 800; }
+.big .pct { color: var(--ok); }
+.log { color: var(--muted); font: 11px Consolas, monospace; white-space: pre-wrap; margin-top: 8px; }
+.spin { display: inline-block; width: 12px; height: 12px; border: 2px solid #ffffff44; border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; margin-right: 6px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.drop { position: fixed; inset: 14px; border: 2px dashed var(--accent); border-radius: 14px; background: #ff4e2718;
+  display: grid; place-items: center; font-weight: 750; font-size: 15px; pointer-events: none; }
+.toast { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); max-width: min(560px, calc(100% - 32px));
+  padding: 10px 14px; border-radius: 9px; background: #1d0f13; border: 1px solid #4a242b; color: #ffb3b8; font-size: 12px; }
+@media (max-width: 560px) { .brand small, .ver { display: none; } td.s { width: auto; } select { width: 110px; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="mark" aria-hidden="true"><svg viewBox="0 0 100 100" width="22" height="22" style="transform: skew(7deg)">
+    <g fill="#fff"><rect x="44" y="6" width="12" height="18"/><path d="M28 22h44L50 42z"/>
+    <rect x="22" y="45" width="56" height="10" rx="5"/>
+    <path d="M28 78h44L50 58z"/><rect x="44" y="76" width="12" height="18"/></g></svg></div>
+  <div class="brand"><strong>CYBERFACE COMPRESSOR</strong><small>NBA 2K14 · PNG####.IFF</small></div>
+  <span class="ver">v__VERSION__</span>
+  <button class="btn" id="openBtn">Open…</button>
+</header>
+<main>
+  <div class="wrap">
+    <div class="empty" id="empty"><strong>Open a 2K14 cyberface</strong>Click Open, or drop a png####.iff here.<br>
+      The original is never changed: you pick where the smaller copy goes.</div>
+    <div class="card" id="fileCard" hidden>
+      <div class="fname" id="fname"></div>
+      <div class="fpath" id="fpath"></div>
+      <div class="meta" id="meta"></div>
+      <div class="note" id="note" hidden></div>
+    </div>
+    <div class="card" id="texCard" hidden>
+      <div class="texhead"><h2>Textures</h2>
+        <button class="btn sm" id="sdBtn" title="Stock NBA 2K14 sizes: face 512, chest 512, normal 512, occlusion 256, hair 256">Standard (SD) sizes</button>
+        <button class="btn sm" id="keepBtn">Keep all</button></div>
+      <p class="hint">Optional. A smaller size reuses the mip level already in the file, so nothing is re-encoded, but the
+        texture loses detail. Leave on Keep for a lossless file.</p>
+      <table id="texTable"></table>
+    </div>
+    <div class="card actions" id="goCard" hidden>
+      <div class="mode" id="mode"></div>
+      <button class="btn primary" id="goBtn">Compress…</button>
+    </div>
+    <div class="card" id="resCard" hidden>
+      <div id="busy" hidden><span class="spin"></span>Compressing… zopfli takes 10–40 seconds.</div>
+      <div class="result" id="result" hidden>
+        <div class="big"><span id="sizes"></span> <span class="pct" id="pct"></span></div>
+        <div class="fpath" id="outPath"></div>
+        <div><button class="btn" id="revealBtn">Show in folder</button></div>
+      </div>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+  <div class="drop" id="drop" hidden>Drop the .iff to compress it</div>
+  <div class="toast" id="toast" hidden></div>
+</main>
+<script>
+'use strict';
+const TOKEN = '__TOKEN__';
+const $ = (s) => document.querySelector(s);
+const H = { 'X-Token': TOKEN };
+let stamp = -1, toastTimer = 0, fileKey = null, lastErr = null;
+const mb = (n) => (n / 1048576).toFixed(2) + ' MB';
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 7000);
+}
+async function post(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: H, body: body === undefined ? '{}' : body });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) toast(j.error || 'Something went wrong');
+  poll(); return j;
+}
+function sizes() {
+  const out = {};
+  document.querySelectorAll('#texTable select').forEach((s) => { if (s.value !== 'keep') out[s.dataset.name] = +s.value; });
+  return out;
+}
+function updateMode() {
+  const n = Object.keys(sizes()).length;
+  $('#mode').textContent = n ? 'Lossless recompression + ' + n + ' texture' + (n > 1 ? 's' : '') + ' downscaled'
+                             : 'Lossless: pixel-identical, about 3–4% smaller';
+  document.querySelectorAll('#texTable select').forEach((s) => s.classList.toggle('changed', s.value !== 'keep'));
+}
+function pill(label, value, cls) {
+  const p = document.createElement('span'); p.className = 'pill' + (cls ? ' ' + cls : '');
+  if (value !== undefined) { p.append(label + ' '); const b = document.createElement('b'); b.textContent = value; p.append(b); }
+  else p.textContent = label;
+  return p;
+}
+function renderFile(s) {
+  const i = s.info;
+  $('#fname').textContent = s.name;
+  $('#fpath').textContent = s.dropped ? 'Dropped file' : s.path;
+  const m = $('#meta'); m.innerHTML = '';
+  m.append(pill('Size', mb(i.size)));
+  if (i.locked) m.append(pill('Locked (NBA2KHUB): the copy stays locked', undefined, 'lock'));
+  else if (i.mark) m.append(pill('Header mark "' + i.mark + '": kept'));
+  if (!i.zopfli) m.append(pill('zopfli missing: zlib only', undefined, 'lock'));
+  $('#note').hidden = !i.note; $('#note').textContent = i.note || '';
+  const t = $('#texTable'); t.innerHTML = '';
+  const can = !i.note;
+  for (const x of i.textures) {
+    const tr = t.insertRow();
+    tr.insertCell().textContent = x.name; tr.cells[0].className = 'n';
+    const f = tr.insertCell(); f.className = 'f'; f.textContent = x.fmt;
+    const c = tr.insertCell(); c.className = 's';
+    const sel = document.createElement('select'); sel.dataset.name = x.name; sel.disabled = !can;
+    const odd = x.h && x.h !== x.w;
+    sel.add(new Option('Keep ' + (odd ? x.w + '×' + x.h : x.w), 'keep'));
+    if (x.min === x.w) sel.title = 'Only square textures with a full mip chain can be resized';
+    const lo = Math.min(x.w >> 2, SD[x.name] || x.w);
+    for (let w = x.w >> 1; w >= x.min && w >= lo; w >>= 1) sel.add(new Option(w + ' (' + (x.w / w) + '× smaller)', w));
+    if (sel.options.length === 1) sel.disabled = true;
+    sel.onchange = updateMode; c.append(sel);
+  }
+  $('#texCard').hidden = !i.textures.length;
+  $('#sdBtn').disabled = $('#keepBtn').disabled = !can;
+  updateMode();
+}
+async function poll() {
+  try {
+    const s = await (await fetch('/api/state', { headers: H })).json();
+    if (s.stamp === stamp) return;
+    stamp = s.stamp;
+    if (s.error && s.error !== lastErr) toast(s.error);
+    lastErr = s.error;
+    const has = !!s.info;
+    $('#empty').hidden = has; $('#fileCard').hidden = !has; $('#goCard').hidden = !has;
+    const key = has ? s.path + '|' + s.info.size : null;
+    if (has && key !== fileKey) { fileKey = key; renderFile(s); }
+    $('#goBtn').disabled = s.busy; $('#openBtn').disabled = s.busy;
+    document.querySelectorAll('#texTable select').forEach((x) => { if (s.busy) x.disabled = true; });
+    if (!s.busy && has && fileKey === key) {
+      const can = !s.info.note;
+      document.querySelectorAll('#texTable select').forEach((x) => { x.disabled = !can || x.options.length === 1; });
+    }
+    $('#resCard').hidden = !(s.busy || s.result || (s.log && s.log.length));
+    $('#busy').hidden = !s.busy;
+    $('#log').textContent = (s.log || []).join('\n');
+    const r = s.result;
+    $('#result').hidden = !r;
+    if (r) {
+      $('#sizes').textContent = mb(r.before) + ' → ' + mb(r.after);
+      $('#pct').textContent = (100 * (r.before - r.after) / r.before).toFixed(1) + '% smaller' + (r.lossless ? ', lossless' : '');
+      $('#outPath').textContent = 'Saved ' + r.path;
+    }
+  } catch (_) {}
+}
+setInterval(poll, 600); poll();
+$('#openBtn').onclick = () => post('/api/open');
+$('#goBtn').onclick = () => post('/api/compress', JSON.stringify({ sizes: sizes() }));
+$('#revealBtn').onclick = () => post('/api/reveal');
+// stock NBA 2K14 texture sizes (the game's own heads, e.g. the converter's base png1307)
+const SD = { face_color: 512, chest_color: 512, face_normal: 512, face_occlusion: 256, hair_color: 256 };
+function setAll(pick) {
+  document.querySelectorAll('#texTable select').forEach((s) => {
+    if (s.disabled) return;
+    const want = pick(s.dataset.name);
+    s.value = want && [...s.options].some((o) => o.value === String(want)) ? String(want) : 'keep';
+  });
+  updateMode();
+}
+$('#sdBtn').onclick = () => setAll((n) => SD[n]);
+$('#keepBtn').onclick = () => setAll(() => null);
+let depth = 0;
+window.addEventListener('dragenter', (e) => { e.preventDefault(); depth++; $('#drop').hidden = false; });
+window.addEventListener('dragleave', () => { if (--depth <= 0) { depth = 0; $('#drop').hidden = true; } });
+window.addEventListener('dragover', (e) => e.preventDefault());
+window.addEventListener('drop', (e) => {
+  e.preventDefault(); depth = 0; $('#drop').hidden = true;
+  const f = [...e.dataTransfer.files].find((x) => /\.iff$/i.test(x.name)) || e.dataTransfer.files[0];
+  if (f) post('/api/drop?name=' + encodeURIComponent(f.name), f);
+});
+</script>
+</body>
+</html>

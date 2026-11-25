@@ -1,0 +1,8 @@
+# built app (rebuild with build.bat)
+CyberfaceCompressor.exe
+_internal/
+build/
+dist/
+__pycache__/
+*.pyc
+*.part
