@@ -184,7 +184,10 @@ async function poll() {
     const has = !!s.info;
     $('#empty').hidden = has; $('#fileCard').hidden = !has; $('#goCard').hidden = !has;
     const key = has ? s.path + '|' + s.info.size : null;
-    if (has && key !== fileKey) { fileKey = key; renderFile(s); }
+    if (has && key !== fileKey) {
+      fileKey = key; renderFile(s);
+      if (/[?&]preset=sd\b/.test(location.search)) $('#sdBtn').click();   // ?preset=sd: start on SD sizes
+    }
     $('#goBtn').disabled = s.busy; $('#openBtn').disabled = s.busy;
     document.querySelectorAll('#texTable select').forEach((x) => { if (s.busy) x.disabled = true; });
     if (!s.busy && has && fileKey === key) {

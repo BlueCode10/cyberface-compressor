@@ -147,10 +147,11 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(409, {'error': 'open a file first'})
             if busy:
                 return self._send(409, {'error': 'already compressing'})
-            out_dir = os.path.join(initial, 'Compressed') if initial else None
+            dev_save = os.environ.get('CFC_DEV_SAVE')   # development: save into this folder, no dialog
+            out_dir = dev_save or (os.path.join(initial, 'Compressed') if initial else None)
             if out_dir:
                 os.makedirs(out_dir, exist_ok=True)
-            dst = _dialog(True, out_dir, name, 'Save the compressed cyberface')
+            dst = os.path.join(dev_save, name) if dev_save else _dialog(True, out_dir, name, 'Save the compressed cyberface')
             if not dst:
                 if out_dir and not os.listdir(out_dir):
                     os.rmdir(out_dir)
